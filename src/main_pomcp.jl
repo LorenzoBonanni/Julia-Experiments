@@ -14,7 +14,7 @@ include("utils.jl")
 const num_rock = 4
 const map_size = 12
 const n_particle = 32768 # 2^15
-const n_experiments = 1
+const n_experiments = 2
 const max_steps = 1000
 const save_steps = true
 const save_gif = true
@@ -74,12 +74,7 @@ function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int)
     end
 end
 
-function delete_old_file()
-    
-end
-
 function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
-    delete_old_file()
     pf = UnweightedParticleFilter(env, n_particle, rand_noise_generator_for_sim)
 
     solver = POMCPSolver(
@@ -104,7 +99,7 @@ function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
         write(io, "Planner Seed -> $(solver.rng.seed[1])" * "\n")
         write(io, "Filter Seed -> $(pf.rng.seed[1])" * "\n")
         write(io, "Rollout Seed -> $(solver.estimate_value.solver.rng.seed[1])" * "\n")
-        write(io, "Env Seed -> $(env.rng.seed[1])" * "\n")
+        write(io, "Simulator Seed -> $(sim.rng.seed[1])" * "\n")
         write_and_print(io, "Elapsed Time POMCP -> " * string(elapsed))
     end
 
@@ -116,21 +111,15 @@ pomcp_data = Array{Tuple,1}(undef, n_experiments)
 despot_data = Array{Tuple,1}(undef, n_experiments)
 
 output_filename = "results/results.out"
-io = open(output_filename, "w")
-close(io)
+close(open(output_filename, "w"))
+delete_old_files()
+
 for i in 1:n_experiments
     env = get_enviroment()
     open(output_filename, "a") do io
         write_and_print(io, "Running Simulation #$i")
         write_and_print(io, "Rocks Position -> " * string(env.rocks_positions))
     end
-    pomcp_exp_data = run_one_experiment_pomcp(deepcopy(env), i)
-    pomcp_data[i] = pomcp_exp_data
+    pomcp_data[i] = run_one_experiment_pomcp(deepcopy(env), i)
 end
-ret = first.(pomcp_data)
-steps = last.(pomcp_data)
-open(output_filename, "a") do io
-    write_and_print(io, "FINAL RESULTS")
-    write_and_print(io, "Avg Retun $(mean(ret))±$(std(ret))")
-    write_and_print(io, "Avg Steps $(mean(steps))±$(std(steps))")
-end
+compute_final_results(pomcp_data)
