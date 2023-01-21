@@ -11,9 +11,8 @@ function write_and_print(io::IOStream, string_to_be_written_and_printed::String)
     println(string_to_be_written_and_printed)
 end
 
-# TODO add algorithm parameter
-function save_history(hist::SimHistory, i::Int)
-    output_filename = "results/history/hist_$i.out"
+function save_history(hist::SimHistory, i::Int, algo::String)
+    output_filename = "results/history/hist_$(algo)_$i.out"
     ACTIONS = Dict(value => string(key) for (key, value) in RockSample.BASIC_ACTIONS_DICT)
     open(output_filename, "w") do io
         write(io, "S, A, R, SP, O" * "\n")
@@ -26,33 +25,32 @@ function save_history(hist::SimHistory, i::Int)
     end
 end
 
-# TODO add algorithm parameter
-function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int)
-    output_filename = "results/results.out"
+function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, algo::String)
+    output_filename = "results/results_$algo.out"
     if save_gif
         makegif(
             env,
             hist,
-            filename="results/gif/pomcp_$i.gif",
+            filename="results/gif/$(algo)_$i.gif",
             show_progress=true,
         )
     end
     if save_steps
-        save_history(hist, i)
+        save_history(hist, i, algo)
     end
 
     open(output_filename, "a") do io
-        write_and_print(io, "#Steps POMCP -> " * string(n_steps(hist)))
-        write_and_print(io, "Cumulative Discounted Return POMCP -> " * string(discounted_reward(hist)) * "\n")
+        write_and_print(io, "#Steps $algo -> " * string(n_steps(hist)))
+        write_and_print(io, "Cumulative Discounted Return $algo -> " * string(discounted_reward(hist)) * "\n")
     end
 end
 
-function compute_final_results(data:: Array{Tuple,1})
-    output_filename = "results/results.out"
+function compute_final_results(data:: Array{Tuple,1}, algo:: String)
+    output_filename = "results/results_$algo.out"
     ret = first.(data)
     steps = last.(data)
     open(output_filename, "a") do io
-        write_and_print(io, "FINAL RESULTS")
+        write_and_print(io, "FINAL RESULTS $algo")
         write_and_print(io, "Avg Retun $(mean(ret))±$(std(ret))")
         write_and_print(io, "Avg Steps $(mean(steps))±$(std(steps))")
     end
