@@ -37,5 +37,5 @@ function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
     end
 
     save_experiment_data(hist, env, i, "POMCP")
-    return discounted_reward(hist), convert(Float64, n_steps(hist))
+    return discounted_reward(hist), convert(Float64, n_steps(hist)), elapsed
 end

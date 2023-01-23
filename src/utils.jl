@@ -47,11 +47,21 @@ end
 
 function compute_final_results(data:: Array{Tuple,1}, algo:: String)
     output_filename = "results/results_$algo.out"
-    ret = first.(data)
-    steps = last.(data)
+    ret = [x[1] for x in data]
+    steps = [x[2] for x in data]
+    time = [x[3] for x in data]
+    df = DataFrame(disc_return=ret, steps=steps, time=time)
+    CSV.write("results/$algo.csv", df)
     open(output_filename, "a") do io
         write_and_print(io, "FINAL RESULTS $algo")
         write_and_print(io, "Avg Retun $(mean(ret))±$(std(ret))")
         write_and_print(io, "Avg Steps $(mean(steps))±$(std(steps))")
+        write_and_print(io, "Avg Time $(mean(time))±$(std(time))")
     end
+    make_plots(ret, algo)
+end
+
+function make_plots(ret:: Vector, algo::String)
+    histogram(ret)
+    StatsPlots.savefig("results/hist_$algo.png")
 end
