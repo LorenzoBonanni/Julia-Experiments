@@ -1,22 +1,12 @@
 using POMDPGifs # to make gifs
 using Cairo # for making/saving the gif
-using RockSample
-using POMDPs
-using POMDPTools
-using BasicPOMCP
-using ParticleFilters
-using Random
-using FileIO
-using Statistics
-using ProgressMeter
-using ARDESPOT
-using CSV
-using DataFrames
-using StatsPlots
+using RockSample, POMDPs, POMDPTools, BasicPOMCP, ParticleFilters, Random, FileIO, Statistics, 
+     ProgressMeter, ARDESPOT, CSV, DataFrames, StatsPlots, DataStructures
 include("utils.jl")
 include("main_pomcp.jl")
 include("main_despot.jl")
 include("heuristic.jl")
+include("plots.jl")
 
 function get_enviroment()::RockSamplePOMDP
     rocks = [Tuple{Int,Int}(rand(rand_noise_generator_for_env, 1:map_size, 2)) for _ in 1:num_rock]
@@ -33,27 +23,36 @@ function get_enviroment()::RockSamplePOMDP
     return pomdp
 end
 
-
-const n_experiments = 50
+const n_particle = 32768 # 2^15
+const n_sim = n_particle
+const max_steps = 100
+const save_steps = true
+const save_gif = true
+const n_experiments = 10
 const num_rock = 4
 const map_size = 12
 rand_noise_generator_seed_for_env = rand(UInt32)
+rand_noise_generator_seed_for_sim = rand(UInt32)
+rand_noise_generator_seed_for_planner = rand(UInt32)
 rand_noise_generator_for_env = MersenneTwister(rand_noise_generator_seed_for_env)
+rand_noise_generator_for_sim = MersenneTwister(rand_noise_generator_seed_for_sim)
+rand_noise_generator_for_planner = MersenneTwister(rand_noise_generator_seed_for_planner)
 
 pomcp_data = Array{Tuple,1}(undef, n_experiments)
 despot_data = Array{Tuple,1}(undef, n_experiments)
 despot_data_informed = Array{Tuple,1}(undef, n_experiments)
 
 output_filename_pomcp = "results/results_POMCP.out"
-close(open(output_filename_pomcp, "w"))
+# close(open(output_filename_pomcp, "w"))
 output_filename_despot = "results/results_DESPOT.out"
-close(open(output_filename_despot, "w"))
+# close(open(output_filename_despot, "w"))
 output_filename_despot_informed = "results/results_DESPOT_INFORMED.out"
-close(open(output_filename_despot, "w"))
+# close(open(output_filename_despot, "w"))
 delete_old_files()
 
 for i in 1:n_experiments
     env = get_enviroment()
+
     println("Computing UpperBound...")
     compute_upperbound(deepcopy(env))
     open(output_filename_pomcp, "a") do io
@@ -72,6 +71,6 @@ for i in 1:n_experiments
     despot_data[i] = run_one_experiment_despot(deepcopy(env), i)
     despot_data_informed[i] = run_one_experiment_despot_informed(deepcopy(env), i)
 end
-compute_final_results(pomcp_data, "Pomcp")
-# compute_final_results(despot_data, "Despot Uninformed")
-compute_final_results(despot_data_informed, "Despot Informed")
+compute_final_results(pomcp_data, "POMCP")
+# compute_final_results(despot_data, "DESPOT")
+compute_final_results(despot_data_informed, "DESPOT_INFORMED")

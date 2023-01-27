@@ -1,11 +1,4 @@
-const n_particle = 32768 # 2^15
-const max_steps = 1000
-const save_steps = true
-const save_gif = true
 
-rand_noise_generator_seed_for_sim = rand(UInt32)
-rand_noise_generator_seed_for_planner = rand(UInt32)
-rand_noise_generator_for_sim = MersenneTwister(rand_noise_generator_seed_for_sim)
 
 function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
     pf = UnweightedParticleFilter(env, n_particle, rand_noise_generator_for_sim)
@@ -14,8 +7,8 @@ function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
         estimate_value=RolloutEstimator(RandomPolicy(env, rng=rand_noise_generator_for_sim)),
         max_depth=100,
         c=1.0,
-        tree_queries=10000,
-        rng=MersenneTwister(rand_noise_generator_seed_for_planner)
+        tree_queries=n_sim,
+        rng=rand_noise_generator_for_planner
     )
 
     policy = solve(solver, env)

@@ -1,4 +1,4 @@
-
+step_time = Dict()
 
 function delete_old_files()
     foreach(rm, filter(endswith(".out"), readdir("results/", join=true)))
@@ -14,15 +14,18 @@ end
 function save_history(hist::SimHistory, i::Int, algo::String)
     output_filename = "results/history/hist_$(algo)_$i.out"
     ACTIONS = Dict(value => string(key) for (key, value) in RockSample.BASIC_ACTIONS_DICT)
+    a_list = Vector{String}()
     open(output_filename, "w") do io
         write(io, "S, A, R, SP, O" * "\n")
         @showprogress 1 "Saving History..." for (s, a, r, sp, o, ai, ui) in eachstep(hist, "(s, a, r, sp, o, action_info, update_info)")
-            action = get(ACTIONS, a, a)
+            action = get(ACTIONS, a, "sense$(a - RockSample.N_BASIC_ACTIONS)")
+            push!(a_list, action)
             write(io, "$s, $action, $r, $sp, $o" * "\n")
             write(io, "Action Info: $ai" * "\n")
             write(io, "Update Info: $ui" * "\n")
         end
     end
+    # plot_action_dist(a_list, i)
 end
 
 function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, algo::String)
@@ -38,7 +41,10 @@ function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, al
     if save_steps
         save_history(hist, i, algo)
     end
-
+    if !haskey(step_time, algo)
+        step_time[algo] = []
+    end
+    append!(step_time[algo], get.(eachstep(hist, "action_info"), :search_time_us, NaN)*1e6)
     open(output_filename, "a") do io
         write_and_print(io, "#Steps $algo -> " * string(n_steps(hist)))
         write_and_print(io, "Cumulative Discounted Return $algo -> " * string(discounted_reward(hist)) * "\n")
@@ -54,14 +60,10 @@ function compute_final_results(data:: Array{Tuple,1}, algo:: String)
     CSV.write("results/$algo.csv", df)
     open(output_filename, "a") do io
         write_and_print(io, "FINAL RESULTS $algo")
-        write_and_print(io, "Avg Retun $(mean(ret))±$(std(ret))")
-        write_and_print(io, "Avg Steps $(mean(steps))±$(std(steps))")
-        write_and_print(io, "Avg Time $(mean(time))±$(std(time))")
+        write_and_print(io, "Avg Retun $(round(mean(ret), digits = 3))±$(round(std(ret), digits = 3))")
+        write_and_print(io, "Avg Steps $(round(mean(steps), digits = 3))±$(round(std(steps), digits = 3))")
+        write_and_print(io, "Avg Step Time $(round(mean(step_time[algo]), digits = 3))±$(round(std(step_time[algo]), digits=3))")
+        write_and_print(io, "Avg Time $(round(mean(time), digits = 3))±$(round(std(time), digits = 3))")
     end
-    make_plots(ret, algo)
-end
-
-function make_plots(ret:: Vector, algo::String)
-    histogram(ret)
-    StatsPlots.savefig("results/hist_$algo.png")
+    plot_return(ret, algo)
 end

@@ -14,5 +14,5 @@ function upper(pomdp::POMDP, b::ScenarioBelief)
 end
 
 # 1 UP, 2 DOWN, 3 LEFT, 4 RIGHT, ..., K sample kth rock
-always_left = FunctionPolicy(b->return RockSample.BASIC_ACTIONS_DICT[:east])
-lower = DefaultPolicyLB(always_left)
+always_right = FunctionPolicy(b->return RockSample.BASIC_ACTIONS_DICT[:east])
+lower = DefaultPolicyLB(always_right)
