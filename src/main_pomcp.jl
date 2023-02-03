@@ -1,8 +1,6 @@
-
+using BasicPOMCP
 
 function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
-    pf = UnweightedParticleFilter(env, n_particle, rand_noise_generator_for_sim)
-
     solver = POMCPSolver(
         estimate_value=RolloutEstimator(RandomPolicy(env, rng=rand_noise_generator_for_sim)),
         max_depth=100,
@@ -12,6 +10,7 @@ function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
     )
 
     policy = solve(solver, env)
+    pf = updater(policy)
     sim = HistoryRecorder(
         rng=rand_noise_generator_for_sim,
         max_steps=max_steps,
@@ -30,5 +29,5 @@ function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
     end
 
     save_experiment_data(hist, env, i, "POMCP")
-    return discounted_reward(hist), convert(Float64, n_steps(hist)), elapsed
+    return discounted_reward(hist), undiscounted_reward(hist), convert(Float64, n_steps(hist)), elapsed
 end

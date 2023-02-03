@@ -1,7 +1,7 @@
 using POMDPGifs # to make gifs
 using Cairo # for making/saving the gif
-using RockSample, POMDPs, POMDPTools, BasicPOMCP, ParticleFilters, Random, FileIO, Statistics, 
-     ProgressMeter, ARDESPOT, CSV, DataFrames, StatsPlots, DataStructures
+using RockSample, POMDPs, POMDPTools, ParticleFilters, Random, FileIO, Statistics, 
+     ProgressMeter, CSV, DataFrames, StatsPlots, DataStructures
 include("utils.jl")
 include("main_pomcp.jl")
 include("main_despot.jl")
@@ -28,7 +28,7 @@ const n_sim = n_particle
 const max_steps = 100
 const save_steps = true
 const save_gif = true
-const n_experiments = 10
+const n_experiments = 50
 const num_rock = 4
 const map_size = 12
 rand_noise_generator_seed_for_env = rand(UInt32)
@@ -72,5 +72,5 @@ for i in 1:n_experiments
     despot_data_informed[i] = run_one_experiment_despot_informed(deepcopy(env), i)
 end
 compute_final_results(pomcp_data, "POMCP")
-# compute_final_results(despot_data, "DESPOT")
+compute_final_results(despot_data, "DESPOT")
 compute_final_results(despot_data_informed, "DESPOT_INFORMED")
