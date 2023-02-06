@@ -1,7 +1,7 @@
-values = NaN
+vals = NaN
 function compute_upperbound(env:: RockSamplePOMDP)
-    global values
-    values = RockSample.rs_mdp_utility(env)
+    global vals
+    vals = RockSample.rs_mdp_utility(env)
 end
 
 
@@ -9,7 +9,7 @@ function upper(pomdp::POMDP, b::ScenarioBelief)
     scenarios = last.(b.scenarios)
     scenarios_idx = stateindex.([pomdp], scenarios)
     len = first(last(b.scenarios))
-    mdp_values = getindex(values, scenarios_idx)
+    mdp_values = getindex(vals, scenarios_idx)
     return sum(mdp_values)
 end
 

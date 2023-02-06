@@ -1,7 +1,7 @@
 using POMDPGifs # to make gifs
 using Cairo # for making/saving the gif
 using RockSample, POMDPs, POMDPTools, ParticleFilters, Random, FileIO, Statistics, 
-     ProgressMeter, CSV, DataFrames, StatsPlots, DataStructures
+     ProgressMeter, CSV, DataFrames, StatsPlots, DataStructures, Dates, StatsBase
 include("utils.jl")
 include("main_pomcp.jl")
 include("main_despot.jl")
@@ -9,7 +9,8 @@ include("heuristic.jl")
 include("plots.jl")
 
 function get_enviroment()::RockSamplePOMDP
-    rocks = [Tuple{Int,Int}(rand(rand_noise_generator_for_env, 1:map_size, 2)) for _ in 1:num_rock]
+    # rocks = [Tuple{Int,Int}(rand(rand_noise_generator_for_env, 1:map_size, 2)) for _ in 1:num_rock]
+    rocks = [(1,9), (6,3), (2,5), (6,6)]
     pomdp = RockSamplePOMDP{num_rock}(
         map_size=(map_size, map_size),
         rocks_positions=rocks,
@@ -43,12 +44,11 @@ despot_data = Array{Tuple,1}(undef, n_experiments)
 despot_data_informed = Array{Tuple,1}(undef, n_experiments)
 
 output_filename_pomcp = "results/results_POMCP.out"
-# close(open(output_filename_pomcp, "w"))
 output_filename_despot = "results/results_DESPOT.out"
-# close(open(output_filename_despot, "w"))
 output_filename_despot_informed = "results/results_DESPOT_INFORMED.out"
-# close(open(output_filename_despot, "w"))
 delete_old_files()
+
+start = Dates.format(now(), "HH:MM")
 
 for i in 1:n_experiments
     env = get_enviroment()
@@ -74,3 +74,4 @@ end
 compute_final_results(pomcp_data, "POMCP")
 compute_final_results(despot_data, "DESPOT")
 compute_final_results(despot_data_informed, "DESPOT_INFORMED")
+println("\nInitial Time: $(start)\n Final Time: $(Dates.format(now(), "HH:MM"))")

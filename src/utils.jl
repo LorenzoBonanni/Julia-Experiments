@@ -4,6 +4,8 @@ function delete_old_files()
     foreach(rm, filter(endswith(".out"), readdir("results/", join=true)))
     foreach(rm, readdir("results/history", join=true))
     foreach(rm, readdir("results/gif", join=true))
+    foreach(rm, readdir("results/actions", join=true))
+    foreach(rm, readdir("results/return", join=true))
 end
 
 function write_and_print(io::IOStream, string_to_be_written_and_printed::String)
@@ -12,7 +14,7 @@ function write_and_print(io::IOStream, string_to_be_written_and_printed::String)
 end
 
 function save_history(hist::SimHistory, i::Int, algo::String)
-    output_filename = "results/history/hist_$(algo)_$i.out"
+    output_filename = "results/history/hist_$(algo)_$(i).out"
     ACTIONS = Dict(value => string(key) for (key, value) in RockSample.BASIC_ACTIONS_DICT)
     a_list = Vector{String}()
     open(output_filename, "w") do io
@@ -25,7 +27,7 @@ function save_history(hist::SimHistory, i::Int, algo::String)
             write(io, "Update Info: $ui" * "\n")
         end
     end
-    # plot_action_dist(a_list, i)
+    plot_action_dist(a_list, i, algo)
 end
 
 function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, algo::String)
@@ -34,7 +36,7 @@ function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, al
         makegif(
             env,
             hist,
-            filename="results/gif/$(algo)_$i.gif",
+            filename="results/gif/$(algo)_$(i).gif",
             show_progress=false,
         )
     end
@@ -44,7 +46,7 @@ function save_experiment_data(hist::SimHistory, env::RockSamplePOMDP, i::Int, al
     if !haskey(step_time, algo)
         step_time[algo] = []
     end
-    append!(step_time[algo], get.(eachstep(hist, "action_info"), :search_time_us, NaN)*1e6)
+    append!(step_time[algo], get.(eachstep(hist, "action_info"), :search_time_us, NaN)/1e6)
     open(output_filename, "a") do io
         write_and_print(io, "#Steps $algo -> " * string(n_steps(hist)))
         write_and_print(io, "Cumulative Discounted Return $algo -> " * string(discounted_reward(hist)))
@@ -58,13 +60,13 @@ function compute_final_results(data:: Array{Tuple,1}, algo:: String)
     ret = [x[2] for x in data]
     steps = [x[3] for x in data]
     time = [x[4] for x in data]
-    df = DataFrame(disc_return=disc_ret, steps=steps, time=time)
+    df = DataFrame(undisc_return=ret, disc_return=disc_ret, steps=steps, time=time)
     CSV.write("results/$algo.csv", df)
     open(output_filename, "a") do io
         write_and_print(io, "FINAL RESULTS $algo")
         write_and_print(io, "Avg Disc Retun $(round(mean(disc_ret), digits = 3))±$(round(std(disc_ret), digits = 3))")
         write_and_print(io, "Avg Undisc Retun $(round(mean(ret), digits = 3))±$(round(std(ret), digits = 3))")
-        write_and_print(io, "Avg Steps $(round(mean(steps), digits = 3))±$(round(std(steps), digits = 3))")
+        write_and_print(io, "Avg Steps $(round(mean(steps)))±$(round(std(steps)))")
         write_and_print(io, "Avg Step Time $(round(mean(step_time[algo]), digits = 3))±$(round(std(step_time[algo]), digits=3))")
         write_and_print(io, "Avg Time $(round(mean(time), digits = 3))±$(round(std(time), digits = 3))")
     end
@@ -95,6 +97,7 @@ function my_simulate(sim::RolloutSimulator, pomdp::POMDP, policy::Policy, update
 
     while disc > eps && !isterminal(pomdp, s) && step <= max_steps
 
+        # a = action(policy, b)
         a = action(policy, s)
         
         sp, o, r = @gen(:sp,:o,:r)(pomdp, s, a, sim.rng)

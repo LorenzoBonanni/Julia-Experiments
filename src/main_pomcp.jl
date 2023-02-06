@@ -2,7 +2,7 @@ using BasicPOMCP
 
 function run_one_experiment_pomcp(env::RockSamplePOMDP, i::Int)
     solver = POMCPSolver(
-        estimate_value=RolloutEstimator(RandomPolicy(env, rng=rand_noise_generator_for_sim)),
+        estimate_value=FORollout(RandomSolver(rand_noise_generator_for_sim)),
         max_depth=100,
         c=1.0,
         tree_queries=n_sim,
